@@ -36,7 +36,7 @@ jobs:
   build:
     name: 构建 Windows 版本
     runs-on: windows-latest
-    if: github.repository == 'LushShepherd/AUTO-MAS-NoEncryption' && (github.ref_name == 'main' || github.ref_name == 'dev')
+    if: github.repository == 'LushShepherd/AUTO-MAS-NoEncryption' && (github.ref_type == 'tag' || github.ref_name == 'main' || github.ref_name == 'dev')
     
     outputs:
       version_tag: ${{ steps.generate_version_info.outputs.version_tag }}
