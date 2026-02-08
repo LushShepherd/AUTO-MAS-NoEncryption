@@ -172,7 +172,7 @@ class _UpdateHandler:
 
         if Config.get("Update", "Source") == "GitHub":
 
-            download_url = f"https://github.com/AUTO-MAS-Project/AUTO-MAS/releases/download/{self.remote_version}/AUTO-MAS-Lite-Setup-{self.remote_version}-x64.zip"
+            download_url = f"https://github.com/LushShepherd/AUTO-MAS-NoEncryption/releases/download/{self.remote_version}/AUTO-MAS-Lite-Setup-{self.remote_version}-x64.zip"
 
         elif Config.get("Update", "Source") == "MirrorChyan":
 

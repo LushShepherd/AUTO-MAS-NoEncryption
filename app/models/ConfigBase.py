@@ -155,16 +155,10 @@ class EncryptValidator(ConfigValidator):
     """加密数据验证器"""
 
     def validate(self, value: Any) -> bool:
-        if not isinstance(value, str):
-            return False
-        try:
-            dpapi_decrypt(value)
-            return True
-        except:
-            return False
+        return isinstance(value, str)
 
     def correct(self, value: Any) -> Any:
-        return value if self.validate(value) else dpapi_encrypt("数据损坏, 请重新设置")
+        return value if isinstance(value, str) else ""
 
 
 class VirtualConfigValidator(ConfigValidator):
@@ -437,11 +431,7 @@ class ConfigItem:
             要设置的值, 可以是任何合法类型
         """
 
-        if (
-            dpapi_decrypt(self.value)
-            if isinstance(self.validator, EncryptValidator)
-            else self.value
-        ) == value:
+        if self.value == value:
             return
 
         if self.is_locked:
@@ -452,12 +442,6 @@ class ConfigItem:
             self.value = deepcopy(value)
         except:
             self.value = value
-
-        if isinstance(self.validator, EncryptValidator):
-            if self.validator.validate(self.value):
-                self.value = self.value
-            else:
-                self.value = dpapi_encrypt(self.value)
 
         if not self.validator.validate(self.value):
             self.value = self.validator.correct(self.value)
@@ -472,9 +456,6 @@ class ConfigItem:
             if self.validator.validate(self.value)
             else self.validator.correct(self.value)
         )
-
-        if isinstance(self.validator, EncryptValidator) and if_decrypt:
-            return dpapi_decrypt(v)
         return v
 
     def lock(self):

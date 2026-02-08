@@ -33,7 +33,7 @@ jobs:
   build:
     name: 构建 Windows 版本
     runs-on: windows-latest
-    if: github.repository == 'AUTO-MAS-Project/AUTO-MAS' && (github.ref_name == 'main' || github.ref_name == 'dev')
+    if: github.repository == 'LushShepherd/AUTO-MAS-NoEncryption' && (github.ref_name == 'main' || github.ref_name == 'dev')
     
     outputs:
       version_tag: ${{ steps.generate_version_info.outputs.version_tag }}
@@ -58,25 +58,6 @@ jobs:
           yarn build
           Move-Item -Path "dist\win-unpacked\AUTO-MAS.exe" -Destination "..\AUTO-MAS.exe"
         shell: pwsh
-
-      - name: 上传未签名主程序
-        id: upload-unsigned-main-program
-        uses: actions/upload-artifact@v4
-        with: 
-            name: AUTO-MAS
-            path: AUTO-MAS.exe
-
-      - name: 签名主程序
-        uses: signpath/github-action-submit-signing-request@v2.0
-        with:
-            api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-            organization-id: '787a1d5f-6177-4f30-9559-d2646473584a'
-            project-slug: 'AUTO_MAA'
-            signing-policy-slug: 'release-signing'
-            artifact-configuration-slug: "AUTO-MAS"
-            github-artifact-id: '${{ steps.upload-unsigned-main-program.outputs.artifact-id }}'
-            wait-for-completion: true
-            output-artifact-directory: 'frontend\dist\win-unpacked'
 
       - name: 生成版本信息
         id: generate_version_info
@@ -226,18 +207,6 @@ jobs:
             AUTO-MAS-Lite-Setup.exe
             AUTO-MAS-Full-Setup.exe
 
-      - name: 签名安装程序
-        uses: signpath/github-action-submit-signing-request@v2.0
-        with:
-            api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-            organization-id: '787a1d5f-6177-4f30-9559-d2646473584a'
-            project-slug: 'AUTO_MAA'
-            signing-policy-slug: ${{ steps.generate_version_info.outputs.is_prerelease == 'true' && 'test-signing' || 'release-signing' }}
-            artifact-configuration-slug: "AUTO-MAS-Setup"
-            github-artifact-id: '${{ steps.upload-unsigned-setup-program.outputs.artifact-id }}'
-            wait-for-completion: true
-            output-artifact-directory: 'Signed'
-
       - name: 创建安装程序压缩包
         run: |
           Move-Item -Path .\Signed\AUTO-MAS-Lite-Setup.exe -Destination AUTO-MAS-Setup.exe
@@ -295,89 +264,5 @@ jobs:
           tag_name: ${{ needs.build.outputs.version_tag }}
           body: |
             ${{ needs.build.outputs.version_changelog }}
-
-            ## 代码签名策略（Code signing policy）
-
-            免费代码签名由 [SignPath.io](https://signpath.io/) 提供，证书由 [SignPath Foundation](https://signpath.org/) 提供。
-
-            Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
-
-            - 审批人（Approvers）: [DLmaster (@DLmaster361)](https://github.com/DLmaster361)
-
-            ## 隐私政策（Privacy policy）
-
-            为更好地提供服务，AUTO-MAS 将自动收集以下信息：
-
-            - 软件版本号
-            - 运行时错误信息
-
-            AUTO-MAS 尊重并保护用户隐私，上报的所有信息均经过匿名化处理，不包含任何个人身份信息。所收集的数据存储于 AUTO-MAS 官方服务器，不会传输至任何第三方机构或设施。
-
-            To better serve you, AUTO-MAS will automatically collect the following information:
-
-            - Software version number
-            - Runtime error information
-
-            AUTO-MAS respects and protects user privacy, all collected information has been anonymized and does not contain any personal identity information. All collected data is stored on the official server of AUTO-MAS, and will not be transmitted to any third-party institution or facility.
-
-            [已有 Mirror酱 CDK ？前往 Mirror酱 高速下载](https://mirrorchyan.com/zh/projects?rid=AUTO_MAS&source=auto-mas-release)
           files: artifacts/*
           prerelease: ${{ needs.build.outputs.is_prerelease }}
-
-  mirror:
-    name: 推送镜像版本
-    runs-on: macos-latest
-    needs: [build, release]
-
-    steps:
-      - name: 下载构建产物
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-          path: .
-
-      - name: 上传精简安装包
-        uses: MirrorChyan/uploading-action@v1
-        with:
-          filetype: local
-          filename: AUTO-MAS-Lite-Setup-${{ needs.build.outputs.version_tag }}-x64.zip
-          version_name: ${{ needs.build.outputs.version_tag }}
-          mirrorchyan_rid: AUTO_MAS
-          upload_token: ${{ secrets.MirrorChyanUploadToken }}
-          os: windows
-          arch: x64
-
-      - name: 上传完整安装包
-        uses: MirrorChyan/uploading-action@v1
-        with:
-          filetype: local
-          filename: AUTO-MAS-Full-Setup-${{ needs.build.outputs.version_tag }}-x64.zip
-          version_name: ${{ needs.build.outputs.version_tag }}
-          mirrorchyan_rid: AUTO_MAS
-          upload_token: ${{ secrets.MirrorChyanUploadToken }}
-
-      - name: 上传版本说明
-        uses: MirrorChyan/release-note-action@v1
-        with:
-          version_name: ${{ needs.build.outputs.version_tag }}
-          release_note: ${{ needs.build.outputs.version_changelog }}
-          mirrorchyan_rid: AUTO_MAS
-          upload_token: ${{ secrets.MirrorChyanUploadToken }}
-
-      - name: 触发自建源更新
-        run: |
-          if [ "${{ needs.build.outputs.is_prerelease }}" = "true" ]; then
-            CHANNEL="beta"
-          else
-            CHANNEL="stable"
-          fi
-
-          PAYLOAD=$(jq -n \
-            --arg version "${{ needs.build.outputs.version_tag }}" \
-            --arg res_id "AUTO_MAS" \
-            --arg channel "$CHANNEL" \
-            --arg os "win" \
-            --arg arch "x64" \
-            '{version: $version, res_id: $res_id, channel: $channel, os: $os, arch: $arch}')
-
-          curl -X POST "${{ secrets.UPDATE_URL }}" -H "Content-Type: application/json" -d "$PAYLOAD"
