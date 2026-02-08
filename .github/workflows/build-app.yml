@@ -212,8 +212,8 @@ jobs:
 
       - name: 创建安装程序压缩包
         run: |
-          Compress-Archive -Path AUTO-MAS-Setup.exe -DestinationPath AUTO-MAS-Lite-Setup-${{ github.ref_name }}-x64.zip -Force
-          Compress-Archive -Path AUTO-MAS-Setup.exe -DestinationPath AUTO-MAS-Full-Setup-${{ github.ref_name }}-x64.zip -Force
+          Compress-Archive -Path AUTO-MAS-Lite-Setup.exe -DestinationPath AUTO-MAS-Lite-Setup-${{ github.ref_name }}-x64.zip -Force
+          Compress-Archive -Path AUTO-MAS-Full-Setup.exe -DestinationPath AUTO-MAS-Full-Setup-${{ github.ref_name }}-x64.zip -Force
         shell: pwsh
 
       - name: 上传构建产物
