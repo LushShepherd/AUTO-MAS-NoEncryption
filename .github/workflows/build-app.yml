@@ -23,6 +23,9 @@ name: 构建并发布应用程序
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - "v*"
 
 permissions:
   contents: write
@@ -238,30 +241,11 @@ jobs:
           name: build-artifacts
           path: artifacts
 
-      - name: 创建发行版分支与标签
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-
-          NEW_BRANCH="release/${{ needs.build.outputs.version_tag }}"
-          TAG_NAME="${{ needs.build.outputs.version_tag }}"
-
-          echo "Creating branch: $NEW_BRANCH"
-          echo "Creating tag: $TAG_NAME"
-
-          git checkout -b "$NEW_BRANCH"
-          git push origin "$NEW_BRANCH"
-
-          git tag "$TAG_NAME"
-          git push origin "$TAG_NAME"
-
       - name: 发布发行版
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ needs.build.outputs.version_tag }}
+          tag_name: ${{ github.ref_name }}
           body: |
             ${{ needs.build.outputs.version_changelog }}
           files: artifacts/*
